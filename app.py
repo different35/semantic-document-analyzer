@@ -1,7 +1,7 @@
 import streamlit as st
 import sys
 sys.path.append("..")
-from core.knowledge_base import AMDOptimizedKnowledgeBase
+from knowledge_base import AMDOptimizedKnowledgeBase
 
 st.set_page_config(page_title="Semantik Arama", page_icon="🔍", layout="wide")
 
