@@ -40,8 +40,13 @@ Then open your browser to `http://localhost:8501`
 ### Step 1: Upload Data
 
 1. Click **"Browse files"** in the sidebar
-2. Select your JSON file with football/sports data
+2. Select one or more JSON files with football/sports data
 3. Preview your data to verify it loaded correctly
+
+**Multiple File Support:**
+- You can upload multiple JSON files at once
+- All files will be automatically combined into a single dataset
+- Files can have the same or different structures (common fields will be aligned)
 
 **Required Format:**
 - JSON array of objects or dictionary with arrays

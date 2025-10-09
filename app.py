@@ -50,18 +50,33 @@ st.markdown('<p class="sub-header">Autonomous Multi-Model Analysis with Mind Vor
 # Sidebar for data upload and configuration
 with st.sidebar:
     st.header("📁 Data Upload")
-    uploaded_file = st.file_uploader(
-        "Upload JSON Data File", 
+    uploaded_files = st.file_uploader(
+        "Upload JSON Data File(s)", 
         type=['json'],
-        help="Upload football statistics or any sports data in JSON format"
+        accept_multiple_files=True,
+        help="Upload one or more JSON files with football statistics or sports data"
     )
     
-    if uploaded_file is not None:
+    if uploaded_files is not None and len(uploaded_files) > 0:
         try:
-            json_data = json.load(uploaded_file)
+            # Load all JSON files
+            if len(uploaded_files) == 1:
+                # Single file - load normally
+                json_data = json.load(uploaded_files[0])
+            else:
+                # Multiple files - load all and combine
+                json_data = []
+                for uploaded_file in uploaded_files:
+                    file_data = json.load(uploaded_file)
+                    json_data.append(file_data)
+            
             st.session_state.analytics.load_json_data(json_data)
             st.session_state.data_loaded = True
-            st.success(f"✅ Data loaded successfully!")
+            
+            if len(uploaded_files) == 1:
+                st.success(f"✅ Data loaded successfully from 1 file!")
+            else:
+                st.success(f"✅ Data loaded successfully from {len(uploaded_files)} files!")
             
             # Show data preview
             st.subheader("Data Preview")
@@ -370,12 +385,14 @@ if st.session_state.data_loaded:
 
 else:
     # Initial state - no data loaded
-    st.info("👈 Please upload a JSON data file from the sidebar to begin analysis")
+    st.info("👈 Please upload one or more JSON data files from the sidebar to begin analysis")
     
     # Sample data format
     with st.expander("📖 Sample Data Format"):
         st.markdown("""
         **Expected JSON Format:**
+        
+        You can upload single or multiple JSON files. Each file should contain:
         
         ```json
         [
