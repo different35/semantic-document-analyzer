@@ -1,0 +1,142 @@
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                   MULTI-FILE JSON UPLOAD FLOW                       │
+└─────────────────────────────────────────────────────────────────────┘
+
+BEFORE (Single File Only):
+┌──────────────┐
+│  User        │
+│  Selects     │───────┐
+│  ONE file    │       │
+└──────────────┘       │
+                       ▼
+                 ┌──────────┐
+                 │ app.py   │
+                 │ Loads    │
+                 │ 1 file   │
+                 └──────────┘
+                       │
+                       ▼
+              ┌─────────────────┐
+              │ sports_analytics│
+              │ load_json_data()│
+              │ (1 file)        │
+              └─────────────────┘
+                       │
+                       ▼
+              ┌─────────────────┐
+              │  DataFrame      │
+              │  (single file)  │
+              └─────────────────┘
+
+
+AFTER (Multiple Files Supported):
+┌──────────────────────┐
+│  User                │
+│  Selects MULTIPLE    │──────┐
+│  files (Ctrl+Click)  │      │
+└──────────────────────┘      │
+                              ▼
+                    ┌─────────────────┐
+                    │ app.py          │
+                    │ (Enhanced)      │
+                    │                 │
+                    │ if 1 file:      │
+                    │   load single   │
+                    │ else:           │
+                    │   loop & append │
+                    └─────────────────┘
+                              │
+                              ▼
+              ┌──────────────────────────────┐
+              │  json_data = [               │
+              │    file1_data,               │
+              │    file2_data,               │
+              │    file3_data                │
+              │  ]                           │
+              └──────────────────────────────┘
+                              │
+                              ▼
+              ┌─────────────────────────────┐
+              │ sports_analytics            │
+              │ load_json_data() (Enhanced) │
+              │                             │
+              │ Detects: list of lists      │
+              │ Action: Concatenate all     │
+              └─────────────────────────────┘
+                              │
+                              ▼
+              ┌─────────────────────────────┐
+              │  DataFrames:                │
+              │  df1 = pd.DataFrame(file1)  │
+              │  df2 = pd.DataFrame(file2)  │
+              │  df3 = pd.DataFrame(file3)  │
+              └─────────────────────────────┘
+                              │
+                              ▼
+              ┌─────────────────────────────┐
+              │  pd.concat([df1, df2, df3], │
+              │            ignore_index=True)│
+              └─────────────────────────────┘
+                              │
+                              ▼
+              ┌─────────────────────────────┐
+              │  Combined DataFrame         │
+              │  ┌─────┬───────┬──────┐     │
+              │  │team │ goals │ wins │     │
+              │  ├─────┼───────┼──────┤     │
+              │  │  A  │  50   │  15  │     │ ← from file1
+              │  │  B  │  45   │  12  │     │ ← from file1
+              │  │  C  │  38   │  10  │     │ ← from file2
+              │  │  D  │  55   │  18  │     │ ← from file2
+              │  └─────┴───────┴──────┘     │
+              └─────────────────────────────┘
+                              │
+                              ▼
+              ┌─────────────────────────────┐
+              │  Unified Analysis           │
+              │  - All teams together       │
+              │  - Cross-file correlations  │
+              │  - Combined insights        │
+              └─────────────────────────────┘
+
+
+KEY ENHANCEMENTS:
+═══════════════════════════════════════════════════════════════════
+
+1. FILE UPLOADER (app.py):
+   ✅ accept_multiple_files=True
+   ✅ Loop through uploaded_files
+   ✅ Collect all JSON data
+
+2. DATA LOADER (core/sports_analytics.py):
+   ✅ Detect list of lists (multiple files)
+   ✅ Create DataFrame for each
+   ✅ Concatenate all DataFrames
+   ✅ Reset indices (ignore_index=True)
+
+3. BACKWARD COMPATIBILITY:
+   ✅ Single file still works
+   ✅ Original behavior preserved
+   ✅ No breaking changes
+
+═══════════════════════════════════════════════════════════════════
+
+EXAMPLE OUTPUT:
+───────────────────────────────────────────────────────────────────
+📁 Loading 2 JSON files...
+  ✓ Loaded: sample_data_set1.json (2 records)
+  ✓ Loaded: sample_data_set2.json (2 records)
+
+✅ Data loaded successfully from 2 files!
+
+Combined Dataset Preview:
+              team  goals_scored  points  wins
+0      Real Madrid            85      88    27
+1        Barcelona            78      82    25
+2  Atletico Madrid            65      76    23
+3          Sevilla            58      62    18
+
+Total: 4 rows from 2 files
+───────────────────────────────────────────────────────────────────
+```
