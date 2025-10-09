@@ -1,0 +1,30 @@
+[
+    {
+        "team": "Atletico Madrid",
+        "goals_scored": 65,
+        "goals_conceded": 38,
+        "shots_per_game": 14.5,
+        "possession_pct": 54.8,
+        "passes_completed": 492,
+        "tackles": 17.2,
+        "interceptions": 14.8,
+        "points": 76,
+        "wins": 23,
+        "draws": 7,
+        "losses": 8
+    },
+    {
+        "team": "Sevilla",
+        "goals_scored": 58,
+        "goals_conceded": 52,
+        "shots_per_game": 13.8,
+        "possession_pct": 51.6,
+        "passes_completed": 468,
+        "tackles": 18.5,
+        "interceptions": 15.5,
+        "points": 62,
+        "wins": 18,
+        "draws": 8,
+        "losses": 12
+    }
+]
