@@ -218,7 +218,7 @@ if st.session_state.data_loaded:
                 vortex_results = st.session_state.analytics.results['mind_vortex']
                 
                 # Key metrics
-                col1, col2, col3 = st.columns(3)
+                col1, col2, col3, col4 = st.columns(4)
                 with col1:
                     st.metric(
                         "Total Variations Tested",
@@ -234,6 +234,32 @@ if st.session_state.data_loaded:
                         "Average R² Score",
                         f"{vortex_results['comparative_metrics']['average_r2_score']:.4f}"
                     )
+                with col4:
+                    st.metric(
+                        "Power Range",
+                        f"{vortex_results['comparative_metrics'].get('power_range', 0):.2f}%"
+                    )
+                
+                # Dynamic Impact Analysis
+                if 'dynamic_impact_metrics' in vortex_results and vortex_results['dynamic_impact_metrics']:
+                    st.subheader("⚡ Dynamic Predictive Power Impact")
+                    
+                    impact_data = vortex_results['dynamic_impact_metrics']
+                    
+                    # Display baseline power
+                    st.info(f"📊 Baseline Predictive Power: **{impact_data.get('baseline_predictive_power', 0):.2f}%**")
+                    
+                    # Show top impact features
+                    st.write("**Top Impact Features:**")
+                    top_impacts = impact_data.get('top_impact_features', [])
+                    for i, feat in enumerate(top_impacts[:5], 1):
+                        st.write(f"{i}. **{feat['feature']}**: Impact = {feat['impact']:.4f} ({feat['percentage']:.2f}%)")
+                    
+                    # Dynamic impact visualization
+                    if 'feature_impacts' in impact_data:
+                        impact_viz = AnalyticsVisualizer.create_dynamic_impact_visualization(impact_data)
+                        if impact_viz:
+                            st.plotly_chart(impact_viz, use_container_width=True)
                 
                 # Mind Vortex visualization
                 vortex_fig = AnalyticsVisualizer.create_mind_vortex_visualization(vortex_results)

@@ -338,7 +338,7 @@ class SportsAnalytics:
     def mind_vortex_evaluation(self, target_col, feature_cols=None):
         """
         Mind Vortex: Evaluate multiple model variations and their contributions
-        Creates a comprehensive comparison of all techniques
+        Creates a comprehensive comparison of all techniques with dynamic impact analysis
         """
         if target_col not in self.data.columns:
             return {"error": f"Target column '{target_col}' not found"}
@@ -347,7 +347,8 @@ class SportsAnalytics:
             'variations': [],
             'best_model': None,
             'comparative_metrics': {},
-            'predictive_power_ranking': []
+            'predictive_power_ranking': [],
+            'dynamic_impact_metrics': {}
         }
         
         # Run all analysis techniques
@@ -370,6 +371,10 @@ class SportsAnalytics:
         
         # 5. Deep Learning
         dl_results = self.deep_learning_correlation(target_col, feature_cols, epochs=30)
+        
+        # 6. Dynamic Predictive Power Impact Analysis
+        print("   🔄 Calculating dynamic predictive power impacts...")
+        dynamic_impact = self.calculate_dynamic_predictive_power_impact(target_col, feature_cols)
         
         # Compile variations
         all_models = {}
@@ -408,28 +413,41 @@ class SportsAnalytics:
             reverse=True
         )
         
+        # Calculate predictive power gains
         vortex_results['predictive_power_ranking'] = [
             {
                 'model': name,
                 'type': metrics['type'],
                 'r2_score': float(metrics.get('r2_score', 0)),
-                'predictive_power': float(metrics.get('r2_score', 0) * 100)
+                'predictive_power': float(metrics.get('r2_score', 0) * 100),
+                'power_gain': float((metrics.get('r2_score', 0) - (ranked_models[-1][1].get('r2_score', 0) if len(ranked_models) > 0 else 0)) * 100)
             }
             for name, metrics in ranked_models
         ]
         
         vortex_results['best_model'] = ranked_models[0] if ranked_models else None
         
+        # Dynamic impact metrics
+        if 'dynamic_predictive_power' in self.results:
+            vortex_results['dynamic_impact_metrics'] = {
+                'feature_impacts': self.results['dynamic_predictive_power'].get('feature_impacts', {}),
+                'top_impact_features': self.results['dynamic_predictive_power'].get('top_impact_features', []),
+                'baseline_predictive_power': float(self.results['dynamic_predictive_power'].get('baseline_r2', 0) * 100)
+            }
+        
         vortex_results['comparative_metrics'] = {
             'total_variations_tested': len(all_models),
             'best_r2_score': float(ranked_models[0][1].get('r2_score', 0)) if ranked_models else 0,
             'average_r2_score': float(np.mean([m[1].get('r2_score', 0) for m in ranked_models])) if ranked_models else 0,
+            'worst_r2_score': float(ranked_models[-1][1].get('r2_score', 0)) if ranked_models else 0,
+            'power_range': float((ranked_models[0][1].get('r2_score', 0) - ranked_models[-1][1].get('r2_score', 0)) * 100) if ranked_models else 0,
             'techniques_used': [
                 'Pearson Correlation',
                 'Multiple Regression Models',
                 'Decision Trees',
                 'Time Series Analysis',
-                'Deep Learning Neural Networks'
+                'Deep Learning Neural Networks',
+                'Dynamic Predictive Power Analysis'
             ]
         }
         
@@ -440,13 +458,113 @@ class SportsAnalytics:
         """Get all analysis results"""
         return self.results
     
+    def calculate_dynamic_predictive_power_impact(self, target_col, feature_cols=None):
+        """
+        Calculate dynamic predictive power impact for each feature
+        Shows how much each feature contributes to prediction accuracy
+        Uses incremental addition to measure contribution
+        """
+        if target_col not in self.data.columns:
+            return {"error": f"Target column '{target_col}' not found"}
+        
+        numeric_data = self.data.select_dtypes(include=[np.number])
+        
+        if feature_cols is None:
+            feature_cols = [col for col in numeric_data.columns if col != target_col]
+        
+        X = numeric_data[feature_cols].fillna(numeric_data[feature_cols].mean())
+        y = numeric_data[target_col].fillna(numeric_data[target_col].mean())
+        
+        # Baseline model (using all features)
+        baseline_model = LinearRegression()
+        X_scaled = self.scaler.fit_transform(X)
+        baseline_model.fit(X_scaled, y)
+        baseline_r2 = r2_score(y, baseline_model.predict(X_scaled))
+        
+        # Calculate incremental impact of each feature
+        feature_impacts = {}
+        
+        # Start with correlation-based importance as a baseline measure
+        for i, feature in enumerate(feature_cols):
+            # Single feature model
+            X_single = numeric_data[[feature]].fillna(numeric_data[[feature]].mean())
+            X_single_scaled = StandardScaler().fit_transform(X_single)
+            
+            single_model = LinearRegression()
+            single_model.fit(X_single_scaled, y)
+            single_r2 = r2_score(y, single_model.predict(X_single_scaled))
+            
+            # Calculate contribution to baseline
+            # For perfect models, use correlation and importance
+            corr = abs(numeric_data[feature].corr(y))
+            
+            # Weighted impact calculation
+            if baseline_r2 > 0.99:  # Near-perfect model
+                # Use correlation strength and variance explained
+                impact = single_r2
+                contribution = corr * single_r2 * 100
+            else:
+                # Remove feature and measure drop
+                features_without = [f for f in feature_cols if f != feature]
+                if features_without:
+                    X_without = numeric_data[features_without].fillna(numeric_data[features_without].mean())
+                    X_without_scaled = StandardScaler().fit_transform(X_without)
+                    
+                    model_without = LinearRegression()
+                    model_without.fit(X_without_scaled, y)
+                    r2_without = r2_score(y, model_without.predict(X_without_scaled))
+                    
+                    impact = baseline_r2 - r2_without
+                    contribution = impact * 100
+                else:
+                    impact = baseline_r2
+                    contribution = baseline_r2 * 100
+            
+            impact_percentage = (impact / baseline_r2 * 100) if baseline_r2 > 0 else 0
+            
+            feature_impacts[feature] = {
+                'absolute_impact': float(impact),
+                'percentage_impact': float(impact_percentage),
+                'predictive_power_contribution': float(contribution),
+                'r2_with_feature': float(baseline_r2),
+                'r2_single_feature': float(single_r2),
+                'correlation_strength': float(corr)
+            }
+        
+        # Sort by predictive power contribution
+        sorted_impacts = dict(sorted(
+            feature_impacts.items(),
+            key=lambda x: x[1]['predictive_power_contribution'],
+            reverse=True
+        ))
+        
+        results = {
+            'feature_impacts': sorted_impacts,
+            'baseline_r2': float(baseline_r2),
+            'total_features': len(feature_cols),
+            'top_impact_features': [
+                {
+                    'feature': k,
+                    'impact': v['absolute_impact'],
+                    'percentage': v['percentage_impact'],
+                    'contribution': v['predictive_power_contribution'],
+                    'single_r2': v['r2_single_feature']
+                }
+                for k, v in list(sorted_impacts.items())[:5]
+            ]
+        }
+        
+        self.results['dynamic_predictive_power'] = results
+        return results
+    
     def generate_contribution_summary(self):
         """Generate detailed contribution summary for visualization"""
         summary = {
             'correlation_insights': [],
             'model_performance': [],
             'feature_importance_aggregate': {},
-            'predictive_power_gains': []
+            'predictive_power_gains': [],
+            'dynamic_impact_analysis': {}
         }
         
         # Correlation insights
@@ -497,5 +615,9 @@ class SportsAnalytics:
         # Predictive power gains
         if 'mind_vortex' in self.results:
             summary['predictive_power_gains'] = self.results['mind_vortex'].get('predictive_power_ranking', [])
+        
+        # Dynamic impact analysis
+        if 'dynamic_predictive_power' in self.results:
+            summary['dynamic_impact_analysis'] = self.results['dynamic_predictive_power'].get('top_impact_features', [])
         
         return summary
