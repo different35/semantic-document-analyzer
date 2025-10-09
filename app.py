@@ -70,23 +70,42 @@ with st.sidebar:
                     file_data = json.load(uploaded_file)
                     json_data.append(file_data)
             
-            st.session_state.analytics.load_json_data(json_data)
-            st.session_state.data_loaded = True
+            # Show loading indicator
+            with st.spinner('Processing JSON data...'):
+                st.session_state.analytics.load_json_data(json_data)
+                st.session_state.data_loaded = True
             
+            # Success message
             if len(uploaded_files) == 1:
                 st.success(f"✅ Data loaded successfully from 1 file!")
             else:
                 st.success(f"✅ Data loaded successfully from {len(uploaded_files)} files!")
             
+            # Show data info
+            df = st.session_state.analytics.data
+            numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+            
+            st.info(f"📊 **Dataset Information**\n\n"
+                   f"- **Rows**: {df.shape[0]}\n"
+                   f"- **Total Columns**: {df.shape[1]}\n"
+                   f"- **Numeric Columns**: {len(numeric_cols)}\n"
+                   f"- **Text Columns**: {df.shape[1] - len(numeric_cols)}")
+            
             # Show data preview
-            st.subheader("Data Preview")
-            st.dataframe(st.session_state.analytics.data.head(), use_container_width=True)
+            st.subheader("📋 Data Preview")
+            st.dataframe(df.head(10), use_container_width=True)
             
-            # Data info
-            st.info(f"📊 Shape: {st.session_state.analytics.data.shape[0]} rows × {st.session_state.analytics.data.shape[1]} columns")
-            
+        except ValueError as e:
+            # User-friendly error for data issues
+            st.error(f"❌ **Data Loading Error**\n\n{str(e)}")
+            st.info("💡 **Tips:**\n\n"
+                   "- Ensure your JSON files contain numeric data suitable for analysis\n"
+                   "- The system supports nested JSON structures from sports APIs\n"
+                   "- Files with only text/categorical data cannot be analyzed")
+        except json.JSONDecodeError as e:
+            st.error(f"❌ **Invalid JSON Format**\n\nThe uploaded file is not valid JSON: {str(e)}")
         except Exception as e:
-            st.error(f"❌ Error loading data: {str(e)}")
+            st.error(f"❌ **Unexpected Error**\n\n{str(e)}\n\nPlease check your file format and try again.")
     
     st.divider()
     

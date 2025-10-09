@@ -49,6 +49,7 @@ Advanced autonomous sports analytics platform with Mind Vortex multi-model evalu
 - 🤖 **Autonomous Operation**: Minimal user input required - upload data and go!
 - 📊 **Interactive Visualizations**: Explore results with Plotly charts
 - 📁 **Multi-File Support**: Upload and combine multiple JSON files
+- 🧠 **Intelligent Data Extraction**: Automatically handles nested JSON structures from sports APIs
 - 🔍 **Cross-Validation**: Robust model evaluation with configurable folds
 - 📈 **Predictive Power Analysis**: Compare model effectiveness
 - 💡 **Feature Importance**: Understand key performance drivers
@@ -81,9 +82,11 @@ Upload one or more JSON files with your football statistics data. The system sup
 
 - **Single file upload**: Upload one JSON file
 - **Multiple file upload**: Upload multiple JSON files to combine datasets
+- **Nested JSON structures**: Automatically extracts data from complex API responses
 
-The format should be:
+#### Supported Formats
 
+**Simple Format:**
 ```json
 [
     {
@@ -97,6 +100,34 @@ The format should be:
     ...
 ]
 ```
+
+**Nested API Format (NEW!):**
+```json
+{
+    "queryUrl": "stats_season_overunder/118689",
+    "doc": [
+        {
+            "event": "stats_season_overunder",
+            "data": {
+                "stats": {
+                    "35": {
+                        "team": {"name": "Man Utd", ...},
+                        "matches": 38,
+                        "goalsscored": {...}
+                    },
+                    ...
+                }
+            }
+        }
+    ]
+}
+```
+
+The system intelligently detects and extracts data from:
+- Nested `doc` → `data` structures
+- Entity collections (multiple teams/players indexed by ID)
+- Deeply nested statistical hierarchies
+- Multiple files with different structures
 
 When uploading multiple files, all data will be automatically combined for unified analysis.
 

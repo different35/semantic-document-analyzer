@@ -22,6 +22,101 @@ class SportsAnalytics:
         self.data = None
         self.results = {}
         self.scaler = StandardScaler()
+    
+    def _extract_nested_data(self, data):
+        """Extract data from nested JSON structures commonly found in sports APIs
+        
+        Args:
+            data: Dictionary or list that may contain nested data
+            
+        Returns:
+            Extracted data suitable for DataFrame conversion, or original data
+        """
+        # Case 1: Standard API response with 'doc' -> 'data' structure
+        if isinstance(data, dict) and 'doc' in data and isinstance(data['doc'], list):
+            extracted_records = []
+            
+            for doc_item in data['doc']:
+                if isinstance(doc_item, dict) and 'data' in doc_item:
+                    # Extract the data field
+                    data_content = doc_item['data']
+                    
+                    # Check for nested collections (like stats with multiple teams)
+                    # Look for dicts where keys are numeric IDs and values are entity records
+                    if isinstance(data_content, dict):
+                        for key, value in data_content.items():
+                            if isinstance(value, dict) and len(value) > 5:  # Increased threshold
+                                # Check if all keys are numeric (entity IDs)
+                                all_keys = list(value.keys())
+                                if all(k.isdigit() for k in all_keys[:10]):  # Check first 10
+                                    # Check if values are entity records (dicts with multiple fields)
+                                    sample_values = list(value.values())[:3]
+                                    if all(isinstance(v, dict) and len(v) > 3 for v in sample_values):
+                                        # This looks like a collection of entities
+                                        # Create one record per entity
+                                        for entity_id, entity_data in value.items():
+                                            flattened = self._flatten_dict(entity_data)
+                                            # Add the entity ID
+                                            flattened[f'{key}_entity_id'] = entity_id
+                                            extracted_records.append(flattened)
+                                        return extracted_records if extracted_records else data
+                    
+                    # Standard flattening if no nested collections found
+                    flattened = self._flatten_dict(data_content)
+                    extracted_records.append(flattened)
+            
+            if extracted_records:
+                return extracted_records
+        
+        # Case 2: Direct list of records
+        if isinstance(data, list):
+            return data
+            
+        # Case 3: Dictionary with array values (columnar format)
+        if isinstance(data, dict):
+            # Check if it's a columnar dict (all values are lists of same length)
+            if all(isinstance(v, list) for v in data.values()):
+                lengths = [len(v) for v in data.values()]
+                if lengths and all(l == lengths[0] for l in lengths):
+                    return data
+            
+            # Otherwise, flatten it to a single record
+            return [self._flatten_dict(data)]
+        
+        return data
+    
+    def _flatten_dict(self, d, parent_key='', sep='_'):
+        """Recursively flatten nested dictionaries
+        
+        Args:
+            d: Dictionary to flatten
+            parent_key: Parent key for nested items
+            sep: Separator between parent and child keys
+            
+        Returns:
+            Flattened dictionary
+        """
+        items = []
+        for k, v in d.items():
+            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+            
+            # Skip keys that start with underscore (metadata)
+            if k.startswith('_') and k not in ['_id']:
+                continue
+                
+            if isinstance(v, dict):
+                # Recursively flatten nested dicts
+                items.extend(self._flatten_dict(v, new_key, sep=sep).items())
+            elif isinstance(v, list):
+                # For lists, only include if they're simple values, not nested objects
+                if v and not isinstance(v[0], (dict, list)):
+                    items.append((new_key, str(v) if len(v) > 1 else v[0] if v else None))
+                # Otherwise skip complex nested lists
+            else:
+                # Include simple values (str, int, float, bool, None)
+                items.append((new_key, v))
+        
+        return dict(items)
         
     def load_json_data(self, json_data):
         """Load and prepare JSON data for analysis
@@ -36,18 +131,57 @@ class SportsAnalytics:
                 # Check if it's multiple file datasets (each dict is a complete dataset)
                 # or a single file with list of records
                 first_keys = set(json_data[0].keys()) if isinstance(json_data[0], dict) else set()
+                
+                # Check if these look like API responses (have 'doc' and 'queryUrl' or similar metadata keys)
+                is_api_response = 'doc' in first_keys or 'data' in first_keys or 'queryUrl' in first_keys
+                
                 if all(isinstance(item, dict) and set(item.keys()) == first_keys for item in json_data):
-                    # This looks like a single file with list of records
-                    self.data = pd.DataFrame(json_data)
+                    # All have same keys - but is it data records or API responses?
+                    if is_api_response or len(json_data) > 1:
+                        # Multiple API responses or multiple files - extract and concatenate
+                        dataframes = []
+                        for data in json_data:
+                            try:
+                                extracted = self._extract_nested_data(data)
+                                if isinstance(extracted, list):
+                                    dataframes.append(pd.DataFrame(extracted))
+                                elif isinstance(extracted, dict):
+                                    dataframes.append(pd.DataFrame([extracted]))
+                                else:
+                                    dataframes.append(pd.DataFrame(extracted))
+                            except Exception as e:
+                                # Log but continue with other files
+                                print(f"Warning: Could not extract data from one file: {e}")
+                                continue
+                        
+                        if dataframes:
+                            self.data = pd.concat(dataframes, ignore_index=True)
+                        else:
+                            raise ValueError("No valid data could be extracted from the provided JSON files")
+                    else:
+                        # Single file with list of records
+                        self.data = pd.DataFrame(json_data)
                 else:
-                    # Multiple datasets - concatenate them
+                    # Multiple datasets with different structures - concatenate them
                     dataframes = []
                     for data in json_data:
-                        if isinstance(data, dict):
-                            dataframes.append(pd.DataFrame(data))
-                        elif isinstance(data, list):
-                            dataframes.append(pd.DataFrame(data))
-                    self.data = pd.concat(dataframes, ignore_index=True)
+                        try:
+                            extracted = self._extract_nested_data(data)
+                            if isinstance(extracted, list):
+                                dataframes.append(pd.DataFrame(extracted))
+                            elif isinstance(extracted, dict):
+                                dataframes.append(pd.DataFrame([extracted]))
+                            else:
+                                dataframes.append(pd.DataFrame(extracted))
+                        except Exception as e:
+                            # Log but continue with other files
+                            print(f"Warning: Could not extract data from one file: {e}")
+                            continue
+                    
+                    if dataframes:
+                        self.data = pd.concat(dataframes, ignore_index=True)
+                    else:
+                        raise ValueError("No valid data could be extracted from the provided JSON files")
             elif all(isinstance(item, list) for item in json_data):
                 # Multiple files, each containing a list of records
                 dataframes = [pd.DataFrame(data) for data in json_data]
@@ -56,11 +190,31 @@ class SportsAnalytics:
                 # Mixed types or single file - treat as single dataset
                 self.data = pd.DataFrame(json_data)
         elif isinstance(json_data, dict):
-            self.data = pd.DataFrame(json_data)
+            # Single dict - check if it needs nested extraction
+            extracted = self._extract_nested_data(json_data)
+            self.data = pd.DataFrame(extracted)
         elif isinstance(json_data, list):
             self.data = pd.DataFrame(json_data)
         else:
             self.data = pd.read_json(json_data)
+        
+        # Validate that we have some data
+        if self.data is None or self.data.empty:
+            raise ValueError("No data could be loaded from the provided JSON")
+            
+        # Check for numeric columns and provide helpful error if none found
+        numeric_cols = self.data.select_dtypes(include=[np.number]).columns.tolist()
+        if not numeric_cols:
+            available_cols = ', '.join(self.data.columns.tolist()[:10])
+            if len(self.data.columns) > 10:
+                available_cols += "..."
+            raise ValueError(
+                f"No numeric columns found in the data. "
+                f"The data contains only text/categorical fields. "
+                f"Available columns: {available_cols}. "
+                f"Please ensure your JSON contains numeric data suitable for statistical analysis."
+            )
+        
         return self.data
     
     def pearson_correlation_analysis(self, target_col=None):
