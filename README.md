@@ -40,6 +40,9 @@ Advanced autonomous sports analytics platform with Mind Vortex multi-model evalu
    - Automatic best model selection
    - Predictive power ranking
    - Cross-validation metrics (R², Accuracy, AIC, Loss)
+   - **⚡ Dynamic Predictive Power Impact Analysis** (NEW)
+   - Smart autonomous feature relationship detection
+   - Real-time impact power calculation
 
 ### Key Capabilities
 
@@ -49,6 +52,8 @@ Advanced autonomous sports analytics platform with Mind Vortex multi-model evalu
 - 📈 **Predictive Power Analysis**: Compare model effectiveness
 - 💡 **Feature Importance**: Understand key performance drivers
 - 🎯 **Multi-Model Comparison**: R², Accuracy, AIC, Loss metrics
+- ⚡ **Dynamic Impact Analysis**: Real-time calculation of feature contribution to predictive power
+- 🔄 **Smart Relationship Technology**: Autonomous detection of impactful feature relationships
 - 📥 **Export Results**: Download analysis results as JSON
 
 ## 🚀 Quick Start
@@ -137,6 +142,7 @@ The Mind Vortex is a unique multi-model evaluation system that:
 3. **Ranks Models**: Orders models by predictive power
 4. **Visualizes Patterns**: Creates spiral/vortex visualizations showing model relationships
 5. **Selects Best Model**: Automatically identifies the highest-performing approach
+6. **⚡ Dynamic Impact Analysis** (NEW): Calculates real-time predictive power contribution for each feature
 
 ### Evaluation Metrics
 
@@ -146,6 +152,18 @@ The Mind Vortex is a unique multi-model evaluation system that:
 - **RMSE**: Root Mean Squared Error
 - **Accuracy**: Classification accuracy (for binary targets)
 - **Loss**: Neural network training/validation loss
+- **⚡ Predictive Power Impact** (NEW): Feature contribution to prediction accuracy
+- **🔄 Power Gain**: Relative improvement over baseline models
+
+### Dynamic Predictive Power Impact Analysis
+
+The new Dynamic Impact Analysis feature provides:
+
+- **Absolute Impact**: Direct R² contribution of each feature
+- **Percentage Impact**: Relative importance as percentage of total predictive power
+- **Power Contribution**: Weighted contribution score combining correlation and predictive strength
+- **Impact Flow Visualization**: Cumulative impact cascade showing how features build predictive power
+- **Smart Relationship Detection**: Autonomous identification of most impactful feature combinations
 
 ## 🎯 Use Cases
 

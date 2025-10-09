@@ -84,6 +84,12 @@ def main():
     for i, (feature, importance) in enumerate(list(contrib_summary['feature_importance_aggregate'].items())[:5], 1):
         print(f"      {i}. {feature:25s}: {importance:.4f}")
     
+    # Dynamic Impact Analysis
+    if 'dynamic_impact_analysis' in contrib_summary and contrib_summary['dynamic_impact_analysis']:
+        print("\n   ⚡ Dynamic Predictive Power Impact (Top 5):")
+        for i, impact_data in enumerate(contrib_summary['dynamic_impact_analysis'][:5], 1):
+            print(f"      {i}. {impact_data['feature']:25s}: Contribution = {impact_data['contribution']:.2f}%, Single R² = {impact_data['single_r2']:.4f}")
+    
     # Save results
     print("\n💾 Saving results...")
     with open('demo_analysis_results.json', 'w') as f:
