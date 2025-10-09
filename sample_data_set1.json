@@ -1,0 +1,30 @@
+[
+    {
+        "team": "Real Madrid",
+        "goals_scored": 85,
+        "goals_conceded": 35,
+        "shots_per_game": 18.2,
+        "possession_pct": 62.5,
+        "passes_completed": 598,
+        "tackles": 14.8,
+        "interceptions": 12.5,
+        "points": 88,
+        "wins": 27,
+        "draws": 7,
+        "losses": 4
+    },
+    {
+        "team": "Barcelona",
+        "goals_scored": 78,
+        "goals_conceded": 42,
+        "shots_per_game": 16.9,
+        "possession_pct": 60.3,
+        "passes_completed": 572,
+        "tackles": 15.6,
+        "interceptions": 13.2,
+        "points": 82,
+        "wins": 25,
+        "draws": 7,
+        "losses": 6
+    }
+]

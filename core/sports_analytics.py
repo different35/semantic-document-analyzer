@@ -24,8 +24,38 @@ class SportsAnalytics:
         self.scaler = StandardScaler()
         
     def load_json_data(self, json_data):
-        """Load and prepare JSON data for analysis"""
-        if isinstance(json_data, dict):
+        """Load and prepare JSON data for analysis
+        
+        Args:
+            json_data: Can be a single dict/list or a list of dicts/lists from multiple files
+        """
+        # Handle list of multiple JSON data objects (from multiple files)
+        if isinstance(json_data, list) and len(json_data) > 0 and isinstance(json_data[0], (dict, list)):
+            # Check if this is a list of data objects from multiple files
+            if all(isinstance(item, dict) for item in json_data):
+                # Check if it's multiple file datasets (each dict is a complete dataset)
+                # or a single file with list of records
+                first_keys = set(json_data[0].keys()) if isinstance(json_data[0], dict) else set()
+                if all(isinstance(item, dict) and set(item.keys()) == first_keys for item in json_data):
+                    # This looks like a single file with list of records
+                    self.data = pd.DataFrame(json_data)
+                else:
+                    # Multiple datasets - concatenate them
+                    dataframes = []
+                    for data in json_data:
+                        if isinstance(data, dict):
+                            dataframes.append(pd.DataFrame(data))
+                        elif isinstance(data, list):
+                            dataframes.append(pd.DataFrame(data))
+                    self.data = pd.concat(dataframes, ignore_index=True)
+            elif all(isinstance(item, list) for item in json_data):
+                # Multiple files, each containing a list of records
+                dataframes = [pd.DataFrame(data) for data in json_data]
+                self.data = pd.concat(dataframes, ignore_index=True)
+            else:
+                # Mixed types or single file - treat as single dataset
+                self.data = pd.DataFrame(json_data)
+        elif isinstance(json_data, dict):
             self.data = pd.DataFrame(json_data)
         elif isinstance(json_data, list):
             self.data = pd.DataFrame(json_data)

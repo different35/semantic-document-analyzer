@@ -45,6 +45,7 @@ Advanced autonomous sports analytics platform with Mind Vortex multi-model evalu
 
 - 🤖 **Autonomous Operation**: Minimal user input required - upload data and go!
 - 📊 **Interactive Visualizations**: Explore results with Plotly charts
+- 📁 **Multi-File Support**: Upload and combine multiple JSON files
 - 🔍 **Cross-Validation**: Robust model evaluation with configurable folds
 - 📈 **Predictive Power Analysis**: Compare model effectiveness
 - 💡 **Feature Importance**: Understand key performance drivers
@@ -71,7 +72,12 @@ The application will open in your browser at `http://localhost:8501`
 
 ### 1. Upload Data
 
-Upload a JSON file with your football statistics data. The format should be:
+Upload one or more JSON files with your football statistics data. The system supports:
+
+- **Single file upload**: Upload one JSON file
+- **Multiple file upload**: Upload multiple JSON files to combine datasets
+
+The format should be:
 
 ```json
 [
@@ -86,6 +92,8 @@ Upload a JSON file with your football statistics data. The format should be:
     ...
 ]
 ```
+
+When uploading multiple files, all data will be automatically combined for unified analysis.
 
 ### 2. Configure Analysis
 
