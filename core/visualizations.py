@@ -258,6 +258,122 @@ class AnalyticsVisualizer:
         return fig
     
     @staticmethod
+    def create_dynamic_impact_visualization(dynamic_impact_data):
+        """Create dynamic predictive power impact visualization"""
+        feature_impacts = dynamic_impact_data.get('feature_impacts', {})
+        
+        if not feature_impacts:
+            return None
+        
+        # Prepare data
+        features = list(feature_impacts.keys())[:10]  # Top 10
+        absolute_impacts = [feature_impacts[f]['absolute_impact'] for f in features]
+        percentage_impacts = [feature_impacts[f]['percentage_impact'] for f in features]
+        power_contributions = [feature_impacts[f]['predictive_power_contribution'] for f in features]
+        
+        # Create subplots
+        fig = make_subplots(
+            rows=2, cols=2,
+            subplot_titles=(
+                'Absolute Impact on R² Score', 
+                'Percentage Impact (%)', 
+                'Predictive Power Contribution',
+                'Impact Power Flow'
+            ),
+            specs=[
+                [{'type': 'bar'}, {'type': 'bar'}],
+                [{'type': 'bar'}, {'type': 'scatter'}]
+            ]
+        )
+        
+        # 1. Absolute Impact
+        fig.add_trace(
+            go.Bar(
+                x=features, 
+                y=absolute_impacts,
+                marker=dict(
+                    color=absolute_impacts,
+                    colorscale='RdYlGn',
+                    showscale=True,
+                    colorbar=dict(title="Impact", x=0.46)
+                ),
+                name='Absolute Impact'
+            ),
+            row=1, col=1
+        )
+        
+        # 2. Percentage Impact
+        fig.add_trace(
+            go.Bar(
+                x=features,
+                y=percentage_impacts,
+                marker=dict(
+                    color=percentage_impacts,
+                    colorscale='Viridis',
+                    showscale=False
+                ),
+                name='% Impact'
+            ),
+            row=1, col=2
+        )
+        
+        # 3. Power Contribution
+        fig.add_trace(
+            go.Bar(
+                x=features,
+                y=power_contributions,
+                marker=dict(
+                    color=power_contributions,
+                    colorscale='Plasma',
+                    showscale=False
+                ),
+                name='Power Contribution'
+            ),
+            row=2, col=1
+        )
+        
+        # 4. Impact Flow (Sunburst/Cascade effect)
+        cumulative_impact = []
+        cumsum = 0
+        for impact in absolute_impacts:
+            cumsum += impact
+            cumulative_impact.append(cumsum)
+        
+        fig.add_trace(
+            go.Scatter(
+                x=features,
+                y=cumulative_impact,
+                mode='lines+markers',
+                marker=dict(
+                    size=12,
+                    color=cumulative_impact,
+                    colorscale='Turbo',
+                    showscale=False,
+                    line=dict(width=2, color='white')
+                ),
+                line=dict(width=3, color='darkblue'),
+                name='Cumulative Impact',
+                fill='tozeroy',
+                fillcolor='rgba(0,100,200,0.2)'
+            ),
+            row=2, col=2
+        )
+        
+        fig.update_layout(
+            title_text="⚡ Dynamic Predictive Power Impact Analysis",
+            showlegend=False,
+            height=800,
+            width=1200
+        )
+        
+        fig.update_xaxes(tickangle=-45, row=1, col=1)
+        fig.update_xaxes(tickangle=-45, row=1, col=2)
+        fig.update_xaxes(tickangle=-45, row=2, col=1)
+        fig.update_xaxes(tickangle=-45, row=2, col=2)
+        
+        return fig
+    
+    @staticmethod
     def create_metrics_comparison_table(vortex_results):
         """Create detailed metrics comparison table"""
         ranking = vortex_results.get('predictive_power_ranking', [])
@@ -269,10 +385,11 @@ class AnalyticsVisualizer:
         types = [r['type'] for r in ranking]
         r2_scores = [f"{r['r2_score']:.4f}" for r in ranking]
         pp = [f"{r['predictive_power']:.2f}%" for r in ranking]
+        power_gains = [f"{r.get('power_gain', 0):.2f}%" for r in ranking]
         
         fig = go.Figure(data=[go.Table(
             header=dict(
-                values=['Rank', 'Model', 'Type', 'R² Score', 'Predictive Power'],
+                values=['Rank', 'Model', 'Type', 'R² Score', 'Predictive Power', 'Power Gain'],
                 fill_color='paleturquoise',
                 align='left',
                 font=dict(size=12, color='black')
@@ -283,7 +400,8 @@ class AnalyticsVisualizer:
                     models,
                     types,
                     r2_scores,
-                    pp
+                    pp,
+                    power_gains
                 ],
                 fill_color='lavender',
                 align='left',
