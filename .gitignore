@@ -35,6 +35,10 @@ uploaded_data/
 models/
 checkpoints/
 
+# Demo outputs
+demo_analysis_results.json
+demo_contribution_summary.json
+
 # IDE
 .vscode/
 .idea/
